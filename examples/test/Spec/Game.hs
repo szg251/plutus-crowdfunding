@@ -1,25 +1,25 @@
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE TemplateHaskell  #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE NumericUnderscores     #-}
+{-# LANGUAGE DataKinds          #-}
+{-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE TemplateHaskell    #-}
+{-# LANGUAGE TypeApplications   #-}
 
 module Spec.Game
     ( tests
     ) where
 
 import           Control.Monad         (void)
-import           Ledger                (ValidationError(ScriptFailure), ScriptError(EvaluationError))
+import           Ledger                (ScriptError (EvaluationError), ValidationError (ScriptFailure))
 import qualified Ledger.Ada            as Ada
-import           Plutus.Contract       (Contract, ContractError(WalletError))
-import           Wallet.API (WalletAPIError(ValidationError))
+import           Plutus.Contract       (Contract, ContractError (WalletError))
 import           Plutus.Contract.Test
 import           Plutus.Contracts.Game
 import           Plutus.Trace.Emulator (ContractInstanceTag)
 import qualified Plutus.Trace.Emulator as Trace
 import qualified PlutusTx
+import           Prelude               hiding (not)
 import           Test.Tasty
 import qualified Test.Tasty.HUnit      as HUnit
-import Prelude hiding (not)
+import           Wallet.API            (WalletAPIError (ValidationError))
 
 w1, w2 :: Wallet
 w1 = Wallet 1
@@ -36,7 +36,8 @@ theContract = game
 -- No funds locked, so W2 (and other wallets) should not have access to guess endpoint
 tests :: TestTree
 tests = testGroup "game"
-    [ checkPredicate "Expose 'lock' endpoint, but not 'guess' endpoint"
+    [
+      checkPredicate "Expose 'lock' endpoint, but not 'guess' endpoint"
         (endpointAvailable @"lock" theContract t1
           .&&. not (endpointAvailable @"guess" theContract t1))
         $ void $ Trace.activateContractWallet w1 (lock @ContractError)
@@ -75,4 +76,4 @@ tests = testGroup "game"
 
 wrongGuessExpectedError :: ContractError
 wrongGuessExpectedError =
-  WalletError (ValidationError (ScriptFailure (EvaluationError [])))
+  WalletError (ValidationError (ScriptFailure (EvaluationError ["Bad guess", "Check has failed"])))
