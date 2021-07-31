@@ -4,15 +4,15 @@ let
   inherit (plutus-starter) haskell;
 
 in
-  haskell.project.shellFor {
-    withHoogle = false;
+haskell.project.shellFor {
+  withHoogle = false;
 
-    nativeBuildInputs = with plutus-starter; [
-      hlint
-      cabal-install
-      haskell-language-server
-      stylish-haskell
-      pkgs.niv
-      cardano-repo-tool
-    ];
-  }
+  nativeBuildInputs = with plutus-starter; [
+    hlint
+    cabal-install
+    haskell-language-server
+    stylish-haskell
+    pkgs.niv
+    cardano-repo-tool
+  ];
+}
