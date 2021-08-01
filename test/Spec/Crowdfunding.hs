@@ -3,7 +3,7 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 
-module Spec.Game (
+module Spec.Crowdfunding (
   tests,
 ) where
 
@@ -12,7 +12,7 @@ import Ledger (ScriptError (EvaluationError), ValidationError (ScriptFailure))
 import qualified Ledger.Ada as Ada
 import Plutus.Contract (Contract, ContractError (WalletError))
 import Plutus.Contract.Test
-import Plutus.Contracts.Game
+import Plutus.Contracts.Crowdfunding
 import Plutus.Trace.Emulator (ContractInstanceTag)
 import qualified Plutus.Trace.Emulator as Trace
 import qualified PlutusTx

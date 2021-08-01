@@ -40,13 +40,14 @@ let
         "checks" = collectChecks;
       };
     in
-    dimension "Haskell component" attrs select;
+      dimension "Haskell component" attrs select;
 
-  ciJobsets = stripAttrsForHydra (filterDerivations {
-    shell = (import ./shell.nix);
+  ciJobsets = stripAttrsForHydra (
+    filterDerivations {
+      shell = (import ./shell.nix);
 
-    build = pkgs.recurseIntoAttrs (mkHaskellDimension pkgs projectPackages);
-  });
+      build = pkgs.recurseIntoAttrs (mkHaskellDimension pkgs projectPackages);
+    }
+  );
 in
-  ciJobsets // { required = derivationAggregate "required-plutus-starter" ciJobsets; }
-
+ciJobsets // { required = derivationAggregate "required-plutus-crowdfunding" ciJobsets; }

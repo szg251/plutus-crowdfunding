@@ -34,7 +34,7 @@ import           Wallet.Emulator.Types               (Wallet (..))
 
 main :: IO ()
 main = void $ Simulator.runSimulationWith handlers $ do
-    Simulator.logString @(Builtin StarterContracts) "Starting plutus-crowdfunding PAB webserver. Press enter to exit."
+    Simulator.logString @(Builtin StarterContracts) "Starting plutus-crowdfunding PAB webserver on port 8080. Press enter to exit."
     shutdown <- PAB.Server.startServerDebug
     -- Example of spinning up a game instance on startup
     -- void $ Simulator.activateContract (Wallet 1) GameContract

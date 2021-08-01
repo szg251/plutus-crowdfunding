@@ -10,11 +10,11 @@ let
 
   haskell-nix = pkgs.haskell-nix;
 
-  plutus-starter = import ./pkgs {
+  plutus-crowdfunding = import ./pkgs {
     inherit pkgs haskell-nix sources plutus;
   };
 
 in
 {
-  inherit pkgs plutus-starter;
+  inherit pkgs plutus-crowdfunding;
 }

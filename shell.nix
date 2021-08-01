@@ -1,13 +1,13 @@
 let
   packages = import ./.;
-  inherit (packages) pkgs plutus-starter;
-  inherit (plutus-starter) haskell;
+  inherit (packages) pkgs plutus-crowdfunding;
+  inherit (plutus-crowdfunding) haskell;
 
 in
 haskell.project.shellFor {
   withHoogle = false;
 
-  nativeBuildInputs = with plutus-starter; [
+  nativeBuildInputs = with plutus-crowdfunding; [
     hlint
     cabal-install
     haskell-language-server

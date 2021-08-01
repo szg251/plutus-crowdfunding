@@ -2,7 +2,7 @@
 
 module Main (main) where
 
-import qualified Spec.Game
+import qualified Spec.Crowdfunding
 import Test.Tasty
 import Test.Tasty.Hedgehog (HedgehogTestLimit (..))
 
@@ -21,5 +21,5 @@ tests =
   localOption limit $
     testGroup
       "use cases"
-      [ Spec.Game.tests
+      [ Spec.Crowdfunding.tests
       ]

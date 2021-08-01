@@ -19,7 +19,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 -- | A guessing game
-module Plutus.Contracts.Game (
+module Plutus.Contracts.Crowdfunding (
   lock,
   guess,
   game,
