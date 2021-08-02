@@ -29,15 +29,15 @@ t1, t2 :: ContractInstanceTag
 t1 = Trace.walletInstanceTag w1
 t2 = Trace.walletInstanceTag w2
 
-theContract :: Contract () GameSchema ContractError ()
-theContract = game
+theContract :: Contract () CrowdfundingSchema ContractError ()
+theContract = crowdfunding
 
 -- W1 locks funds, W2 (and other wallets) should have access to guess endpoint
 -- No funds locked, so W2 (and other wallets) should not have access to guess endpoint
 tests :: TestTree
 tests =
   testGroup
-    "game"
+    "crowdfunding"
     [ checkPredicate
         "Expose 'lock' endpoint, but not 'guess' endpoint"
         ( endpointAvailable @"lock" theContract t1
@@ -73,8 +73,8 @@ tests =
         $ do
           lockTrace w1 "secret"
           guessTrace w2 "SECRET"
-    , goldenPir "examples/test/Spec/game.pir" $$(PlutusTx.compile [||validateGuess||])
-    , HUnit.testCase "script size is reasonable" (reasonable gameValidator 20000)
+    , goldenPir "test/Spec/crowdfunding.pir" $$(PlutusTx.compile [||validateGuess||])
+    , HUnit.testCase "script size is reasonable" (reasonable crowdfundingValidator 20000)
     ]
 
 wrongGuessExpectedError :: ContractError

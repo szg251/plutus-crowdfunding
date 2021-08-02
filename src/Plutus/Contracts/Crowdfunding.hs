@@ -18,22 +18,22 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 
--- | A guessing game
+-- | Crowdfunding smart contract
 module Plutus.Contracts.Crowdfunding (
   lock,
   guess,
-  game,
-  GameSchema,
+  crowdfunding,
+  CrowdfundingSchema,
   GuessParams (..),
   LockParams (..),
 
   -- * Scripts
-  gameValidator,
+  crowdfundingValidator,
   hashString,
   clearString,
 
   -- * Address
-  gameAddress,
+  crowdfundingAddress,
   validateGuess,
 
   -- * Traces
@@ -80,7 +80,7 @@ newtype ClearString = ClearString ByteString
 
 PlutusTx.makeLift ''ClearString
 
-type GameSchema =
+type CrowdfundingSchema =
   Endpoint "lock" LockParams
     .\/ Endpoint "guess" GuessParams
 
@@ -93,36 +93,36 @@ validateGuess hs cs _ = traceIfFalse "Bad guess" (isGoodGuess hs cs) -- then () 
 isGoodGuess :: HashedString -> ClearString -> Bool
 isGoodGuess (HashedString actual) (ClearString guess') = actual == sha2_256 guess'
 
--- | The validator script of the game.
-gameValidator :: Validator
-gameValidator = Scripts.validatorScript gameInstance
+-- | The validator script of the crowdfunding.
+crowdfundingValidator :: Validator
+crowdfundingValidator = Scripts.validatorScript crowdfundingInstance
 
-data Game
-instance Scripts.ValidatorTypes Game where
-  type RedeemerType Game = ClearString
-  type DatumType Game = HashedString
+data Crowdfunding
+instance Scripts.ValidatorTypes Crowdfunding where
+  type RedeemerType Crowdfunding = ClearString
+  type DatumType Crowdfunding = HashedString
 
-gameInstance :: Scripts.TypedValidator Game
-gameInstance =
-  Scripts.mkTypedValidator @Game
+crowdfundingInstance :: Scripts.TypedValidator Crowdfunding
+crowdfundingInstance =
+  Scripts.mkTypedValidator @Crowdfunding
     $$(PlutusTx.compile [||validateGuess||])
     $$(PlutusTx.compile [||wrap||])
  where
   wrap = Scripts.wrapValidator @HashedString @ClearString
 
--- create a data script for the guessing game by hashing the string
+-- create a data script for the guessing crowdfunding by hashing the string
 -- and lifting the hash to its on-chain representation
 hashString :: Haskell.String -> HashedString
 hashString = HashedString . sha2_256 . C.pack
 
--- create a redeemer script for the guessing game by lifting the
+-- create a redeemer script for the guessing crowdfunding by lifting the
 -- string to its on-chain representation
 clearString :: Haskell.String -> ClearString
 clearString = ClearString . C.pack
 
--- | The address of the game (the hash of its validator script)
-gameAddress :: Address
-gameAddress = Ledger.scriptAddress gameValidator
+-- | The address of the crowdfunding (the hash of its validator script)
+crowdfundingAddress :: Address
+crowdfundingAddress = Ledger.scriptAddress crowdfundingValidator
 
 -- | Parameters for the "lock" endpoint
 data LockParams = LockParams
@@ -139,16 +139,16 @@ newtype GuessParams = GuessParams
   deriving stock (Haskell.Eq, Haskell.Show, Generic)
   deriving anyclass (FromJSON, ToJSON, ToSchema, ToArgument)
 
-game :: (AsContractError e, ToJSON e) => Contract () GameSchema e ()
-game = do
+crowdfunding :: (AsContractError e, ToJSON e) => Contract () CrowdfundingSchema e ()
+crowdfunding = do
   logInfo @Haskell.String "Waiting for guess or lock endpoint..."
   selectList [lock, guess]
 
-lock :: (AsContractError e) => Promise () GameSchema e ()
+lock :: (AsContractError e) => Promise () CrowdfundingSchema e ()
 lock = endpoint @"lock" @LockParams $ \(LockParams secret amt) -> do
   logInfo @Haskell.String $ "Pay " <> Haskell.show amt <> " to the script"
   let tx = Constraints.mustPayToTheScript (hashString secret) amt
-  void (submitTxConstraints gameInstance tx)
+  void (submitTxConstraints crowdfundingInstance tx)
 
 delaySlots ::
   forall w s e.
@@ -160,12 +160,12 @@ delaySlots n = Promise $ do
   waitNSlots n
   pure ()
 
-guess :: forall e. (AsContractError e) => Promise () GameSchema e ()
+guess :: forall e. (AsContractError e) => Promise () CrowdfundingSchema e ()
 guess =
   Promise $
-    fundsAtAddressGeq gameAddress (Ada.lovelaceValueOf 1) >>= awaitPromise . guess'
+    fundsAtAddressGeq crowdfundingAddress (Ada.lovelaceValueOf 1) >>= awaitPromise . guess'
 
-guess' :: forall e. (AsContractError e) => UtxoMap -> Promise () GameSchema e ()
+guess' :: forall e. (AsContractError e) => UtxoMap -> Promise () CrowdfundingSchema e ()
 guess' utxos = endpoint @"guess" @GuessParams $ \(GuessParams theGuess) -> do
   -- Wait for script to have a UTxO of a least 1 lovelace
   logInfo @Haskell.String "Waiting for script to have a UTxO of at least 1 lovelace"
@@ -185,7 +185,7 @@ guess' utxos = endpoint @"guess" @GuessParams $ \(GuessParams theGuess) -> do
   -- In a real use-case, we would not submit the transaction if the guess is
   -- wrong.
   logInfo @Haskell.String "Submitting transaction to guess the secret word"
-  void (submitTxConstraintsSpending gameInstance utxos tx)
+  void (submitTxConstraintsSpending crowdfundingInstance utxos tx)
 
 -- | Find the secret word in the Datum of the UTxOs
 findSecretWordValue :: UtxoMap -> Maybe HashedString
