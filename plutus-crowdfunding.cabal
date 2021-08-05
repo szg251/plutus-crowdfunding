@@ -26,6 +26,8 @@ library
   build-depends:
     , aeson
     , base               >=4.9 && <5
+    , time
+    , relude
     , bytestring
     , containers
     , freer-extras
@@ -64,6 +66,7 @@ test-suite plutus-crowdfunding-test
 
   build-depends:
     , base            >=4.9     && <5
+    , relude
     , tasty
     , tasty-hedgehog  >=0.2.0.0
     , tasty-hunit
@@ -76,6 +79,7 @@ executable plutus-crowdfunding-pab
   build-depends:
     , aeson
     , base             >=4.9 && <5
+    , relude
     , data-default
     , freer-extras
     , freer-simple

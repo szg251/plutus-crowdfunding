@@ -1,25 +1,27 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Spec.Crowdfunding (
   tests,
 ) where
 
 import Control.Monad (void)
-import Ledger (ScriptError (EvaluationError), ValidationError (ScriptFailure))
+import Ledger (Value, pubKeyHash)
 import qualified Ledger.Ada as Ada
-import Plutus.Contract (Contract, ContractError (WalletError))
+import Ledger.Value as Value
+import Plutus.Contract (Contract, ContractError)
 import Plutus.Contract.Test
 import Plutus.Contracts.Crowdfunding
-import Plutus.Trace.Emulator (ContractInstanceTag)
+import Plutus.Trace.Emulator (ContractInstanceTag, waitNSlots, waitUntilTime)
 import qualified Plutus.Trace.Emulator as Trace
 import qualified PlutusTx
+import Relude hiding (not)
 import Test.Tasty
 import qualified Test.Tasty.HUnit as HUnit
-import Wallet.API (WalletAPIError (ValidationError))
-import Prelude hiding (not)
 
 w1, w2 :: Wallet
 w1 = Wallet 1
@@ -32,51 +34,38 @@ t2 = Trace.walletInstanceTag w2
 theContract :: Contract () CrowdfundingSchema ContractError ()
 theContract = crowdfunding
 
--- W1 locks funds, W2 (and other wallets) should have access to guess endpoint
--- No funds locked, so W2 (and other wallets) should not have access to guess endpoint
+cfParams :: CrowdfundingParams
+cfParams =
+  CrowdfundingParams
+    { crowdfundingDeadline = 1600000000000
+    , crowdfundingTargetAmount = 1_000_000
+    , crowdfundingOwnerPkh = pubKeyHash $ walletPubKey w1
+    , crowdfundingRewardRatio = 1_000
+    }
+
+rewardAssetClass :: AssetClass
+rewardAssetClass = AssetClass (curSymbol cfParams, TokenName "reward token")
+
 tests :: TestTree
 tests =
   testGroup
     "crowdfunding"
     [ checkPredicate
-        "Expose 'lock' endpoint, but not 'guess' endpoint"
-        ( endpointAvailable @"lock" theContract t1
-            .&&. not (endpointAvailable @"guess" theContract t1)
-        )
-        $ void $ Trace.activateContractWallet w1 (lock @ContractError)
-    , checkPredicate
-        "'lock' endpoint submits a transaction"
-        (anyTx theContract t1)
+        "support endpoint submits a transaction"
+        (anyTx theContract t2)
         $ do
-          hdl <- Trace.activateContractWallet w1 theContract
-          Trace.callEndpoint @"lock" hdl (LockParams "secret" (Ada.adaValueOf 10))
+          hdl <- Trace.activateContractWallet w2 theContract
+          Trace.callEndpoint @"support" hdl (SupportParams cfParams 1_000_000)
     , checkPredicate
-        "'guess' endpoint is available after locking funds"
-        (endpointAvailable @"guess" theContract t2)
-        $ do
-          void $ Trace.activateContractWallet w2 theContract
-          lockTrace w1 "secret"
+        "'support' will send the specified amount to the script address"
+        (walletFundsChange w2 (Ada.adaValueOf (-1) <> Value.assetClassValue rewardAssetClass 1000))
+        $ supportTrace w2 cfParams 1_000_000
     , checkPredicate
-        "guess right (unlock funds)"
-        ( walletFundsChange w2 (Ada.adaValueOf 10)
-            .&&. walletFundsChange w1 (Ada.adaValueOf (-10))
-        )
+        "'support' will disallow funding after deadline"
+        (not $ anyTx theContract t2)
         $ do
-          lockTrace w1 "secret"
-          guessTrace w2 "secret"
-    , checkPredicate
-        "guess wrong"
-        ( walletFundsChange w2 (Ada.lovelaceValueOf 0)
-            .&&. walletFundsChange w1 (Ada.adaValueOf (-10))
-            .&&. assertContractError guess t2 (== wrongGuessExpectedError) ("error should match with: " <> show wrongGuessExpectedError)
-        )
-        $ do
-          lockTrace w1 "secret"
-          guessTrace w2 "SECRET"
-    , goldenPir "test/Spec/crowdfunding.pir" $$(PlutusTx.compile [||validateGuess||])
-    , HUnit.testCase "script size is reasonable" (reasonable crowdfundingValidator 20000)
+          void $ waitUntilTime 1600000000000
+          supportTrace w2 cfParams 1_000_000
+    , goldenPir "test/Spec/crowdfunding.pir" $$(PlutusTx.compile [||validateCrowdfunding||])
+    , HUnit.testCase "script size is reasonable" (reasonable (crowdfundingValidator cfParams) 20000)
     ]
-
-wrongGuessExpectedError :: ContractError
-wrongGuessExpectedError =
-  WalletError (ValidationError (ScriptFailure (EvaluationError ["Bad guess", "Check has failed"])))

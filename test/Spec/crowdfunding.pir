@@ -2,7 +2,12 @@
   (let
     (nonrec)
     (datatypebind
-      (datatype (tyvardecl Unit (type))  Unit_match (vardecl Unit Unit))
+      (datatype
+        (tyvardecl Ordering (type))
+
+        Ordering_match
+        (vardecl EQ Ordering) (vardecl GT Ordering) (vardecl LT Ordering)
+      )
     )
     (datatypebind
       (datatype
@@ -14,15 +19,16 @@
     )
     (termbind
       (strict)
-      (vardecl wvalidateGuess (fun (con bytestring) (fun (con bytestring) Bool))
+      (vardecl
+        fOrdInteger_ccompare (fun (con integer) (fun (con integer) Ordering))
       )
       (lam
-        w
-        (con bytestring)
+        x
+        (con integer)
         (lam
-          w
-          (con bytestring)
-          [
+          y
+          (con integer)
+          {
             [
               [
                 {
@@ -32,34 +38,1687 @@
                       [
                         [
                           { (builtin ifThenElse) Bool }
-                          [
-                            [ (builtin equalsByteString) w ]
-                            [ (builtin sha2_256) w ]
-                          ]
+                          [ [ (builtin equalsInteger) x ] y ]
                         ]
                         True
                       ]
                       False
                     ]
                   ]
-                  (fun Unit Bool)
+                  (all dead (type) Ordering)
                 }
-                (lam thunk Unit True)
+                (abs dead (type) EQ)
               ]
-              (lam
-                thunk
-                Unit
-                [
+              (abs
+                dead
+                (type)
+                {
                   [
-                    { (builtin chooseUnit) Bool }
-                    [ (builtin trace) (con string "Bad guess") ]
+                    [
+                      {
+                        [
+                          Bool_match
+                          [
+                            [
+                              [
+                                { (builtin ifThenElse) Bool }
+                                [ [ (builtin lessThanEqualsInteger) x ] y ]
+                              ]
+                              True
+                            ]
+                            False
+                          ]
+                        ]
+                        (all dead (type) Ordering)
+                      }
+                      (abs dead (type) LT)
+                    ]
+                    (abs dead (type) GT)
                   ]
-                  False
-                ]
+                  (all dead (type) dead)
+                }
               )
             ]
-            Unit
+            (all dead (type) dead)
+          }
+        )
+      )
+    )
+    (datatypebind
+      (datatype
+        (tyvardecl Extended (fun (type) (type)))
+        (tyvardecl a (type))
+        Extended_match
+        (vardecl Finite (fun a [Extended a]))
+        (vardecl NegInf [Extended a])
+        (vardecl PosInf [Extended a])
+      )
+    )
+    (termbind
+      (strict)
+      (vardecl
+        wsfOrdUpperBound0_c
+        (fun [Extended (con integer)] (fun Bool (fun [Extended (con integer)] (fun Bool Bool))))
+      )
+      (lam
+        ww
+        [Extended (con integer)]
+        (lam
+          ww
+          Bool
+          (lam
+            ww
+            [Extended (con integer)]
+            (lam
+              ww
+              Bool
+              {
+                [
+                  [
+                    [
+                      {
+                        [ { Extended_match (con integer) } ww ]
+                        (all dead (type) Bool)
+                      }
+                      (lam
+                        default_arg0
+                        (con integer)
+                        (abs
+                          dead
+                          (type)
+                          {
+                            [
+                              [
+                                [
+                                  {
+                                    [ { Extended_match (con integer) } ww ]
+                                    (all dead (type) Bool)
+                                  }
+                                  (lam
+                                    default_arg0
+                                    (con integer)
+                                    (abs
+                                      dead
+                                      (type)
+                                      {
+                                        [
+                                          [
+                                            [
+                                              {
+                                                [
+                                                  {
+                                                    Extended_match (con integer)
+                                                  }
+                                                  ww
+                                                ]
+                                                (all dead (type) Bool)
+                                              }
+                                              (lam
+                                                ipv
+                                                (con integer)
+                                                (abs
+                                                  dead
+                                                  (type)
+                                                  {
+                                                    [
+                                                      [
+                                                        [
+                                                          {
+                                                            [
+                                                              {
+                                                                Extended_match
+                                                                (con integer)
+                                                              }
+                                                              ww
+                                                            ]
+                                                            (all dead (type) Bool)
+                                                          }
+                                                          (lam
+                                                            ipv
+                                                            (con integer)
+                                                            (abs
+                                                              dead
+                                                              (type)
+                                                              {
+                                                                [
+                                                                  [
+                                                                    [
+                                                                      {
+                                                                        [
+                                                                          Ordering_match
+                                                                          [
+                                                                            [
+                                                                              fOrdInteger_ccompare
+                                                                              ipv
+                                                                            ]
+                                                                            ipv
+                                                                          ]
+                                                                        ]
+                                                                        (all dead (type) Bool)
+                                                                      }
+                                                                      (abs
+                                                                        dead
+                                                                        (type)
+                                                                        {
+                                                                          [
+                                                                            [
+                                                                              {
+                                                                                [
+                                                                                  Bool_match
+                                                                                  ww
+                                                                                ]
+                                                                                (all dead (type) Bool)
+                                                                              }
+                                                                              (abs
+                                                                                dead
+                                                                                (type)
+                                                                                ww
+                                                                              )
+                                                                            ]
+                                                                            (abs
+                                                                              dead
+                                                                              (type)
+                                                                              True
+                                                                            )
+                                                                          ]
+                                                                          (all dead (type) dead)
+                                                                        }
+                                                                      )
+                                                                    ]
+                                                                    (abs
+                                                                      dead
+                                                                      (type)
+                                                                      False
+                                                                    )
+                                                                  ]
+                                                                  (abs
+                                                                    dead
+                                                                    (type)
+                                                                    True
+                                                                  )
+                                                                ]
+                                                                (all dead (type) dead)
+                                                              }
+                                                            )
+                                                          )
+                                                        ]
+                                                        (abs
+                                                          dead
+                                                          (type)
+                                                          (error Bool)
+                                                        )
+                                                      ]
+                                                      (abs dead (type) True)
+                                                    ]
+                                                    (all dead (type) dead)
+                                                  }
+                                                )
+                                              )
+                                            ]
+                                            (abs dead (type) (error Bool))
+                                          ]
+                                          (abs
+                                            dead
+                                            (type)
+                                            {
+                                              [
+                                                [
+                                                  [
+                                                    {
+                                                      [
+                                                        {
+                                                          Extended_match
+                                                          (con integer)
+                                                        }
+                                                        ww
+                                                      ]
+                                                      (all dead (type) Bool)
+                                                    }
+                                                    (lam
+                                                      ipv
+                                                      (con integer)
+                                                      (abs dead (type) False)
+                                                    )
+                                                  ]
+                                                  (abs dead (type) (error Bool))
+                                                ]
+                                                (abs
+                                                  dead
+                                                  (type)
+                                                  {
+                                                    [
+                                                      [
+                                                        {
+                                                          [ Bool_match ww ]
+                                                          (all dead (type) Bool)
+                                                        }
+                                                        (abs dead (type) ww)
+                                                      ]
+                                                      (abs dead (type) True)
+                                                    ]
+                                                    (all dead (type) dead)
+                                                  }
+                                                )
+                                              ]
+                                              (all dead (type) dead)
+                                            }
+                                          )
+                                        ]
+                                        (all dead (type) dead)
+                                      }
+                                    )
+                                  )
+                                ]
+                                (abs dead (type) False)
+                              ]
+                              (abs
+                                dead
+                                (type)
+                                {
+                                  [
+                                    [
+                                      [
+                                        {
+                                          [
+                                            { Extended_match (con integer) } ww
+                                          ]
+                                          (all dead (type) Bool)
+                                        }
+                                        (lam
+                                          ipv
+                                          (con integer)
+                                          (abs
+                                            dead
+                                            (type)
+                                            {
+                                              [
+                                                [
+                                                  [
+                                                    {
+                                                      [
+                                                        {
+                                                          Extended_match
+                                                          (con integer)
+                                                        }
+                                                        ww
+                                                      ]
+                                                      (all dead (type) Bool)
+                                                    }
+                                                    (lam
+                                                      ipv
+                                                      (con integer)
+                                                      (abs
+                                                        dead
+                                                        (type)
+                                                        {
+                                                          [
+                                                            [
+                                                              [
+                                                                {
+                                                                  [
+                                                                    Ordering_match
+                                                                    [
+                                                                      [
+                                                                        fOrdInteger_ccompare
+                                                                        ipv
+                                                                      ]
+                                                                      ipv
+                                                                    ]
+                                                                  ]
+                                                                  (all dead (type) Bool)
+                                                                }
+                                                                (abs
+                                                                  dead
+                                                                  (type)
+                                                                  {
+                                                                    [
+                                                                      [
+                                                                        {
+                                                                          [
+                                                                            Bool_match
+                                                                            ww
+                                                                          ]
+                                                                          (all dead (type) Bool)
+                                                                        }
+                                                                        (abs
+                                                                          dead
+                                                                          (type)
+                                                                          ww
+                                                                        )
+                                                                      ]
+                                                                      (abs
+                                                                        dead
+                                                                        (type)
+                                                                        True
+                                                                      )
+                                                                    ]
+                                                                    (all dead (type) dead)
+                                                                  }
+                                                                )
+                                                              ]
+                                                              (abs
+                                                                dead
+                                                                (type)
+                                                                False
+                                                              )
+                                                            ]
+                                                            (abs
+                                                              dead (type) True
+                                                            )
+                                                          ]
+                                                          (all dead (type) dead)
+                                                        }
+                                                      )
+                                                    )
+                                                  ]
+                                                  (abs dead (type) (error Bool))
+                                                ]
+                                                (abs dead (type) True)
+                                              ]
+                                              (all dead (type) dead)
+                                            }
+                                          )
+                                        )
+                                      ]
+                                      (abs dead (type) (error Bool))
+                                    ]
+                                    (abs
+                                      dead
+                                      (type)
+                                      {
+                                        [
+                                          [
+                                            [
+                                              {
+                                                [
+                                                  {
+                                                    Extended_match (con integer)
+                                                  }
+                                                  ww
+                                                ]
+                                                (all dead (type) Bool)
+                                              }
+                                              (lam
+                                                ipv
+                                                (con integer)
+                                                (abs dead (type) False)
+                                              )
+                                            ]
+                                            (abs dead (type) (error Bool))
+                                          ]
+                                          (abs
+                                            dead
+                                            (type)
+                                            {
+                                              [
+                                                [
+                                                  {
+                                                    [ Bool_match ww ]
+                                                    (all dead (type) Bool)
+                                                  }
+                                                  (abs dead (type) ww)
+                                                ]
+                                                (abs dead (type) True)
+                                              ]
+                                              (all dead (type) dead)
+                                            }
+                                          )
+                                        ]
+                                        (all dead (type) dead)
+                                      }
+                                    )
+                                  ]
+                                  (all dead (type) dead)
+                                }
+                              )
+                            ]
+                            (all dead (type) dead)
+                          }
+                        )
+                      )
+                    ]
+                    (abs
+                      dead
+                      (type)
+                      {
+                        [
+                          [
+                            [
+                              {
+                                [ { Extended_match (con integer) } ww ]
+                                (all dead (type) Bool)
+                              }
+                              (lam
+                                default_arg0
+                                (con integer)
+                                (abs dead (type) True)
+                              )
+                            ]
+                            (abs
+                              dead
+                              (type)
+                              {
+                                [
+                                  [
+                                    { [ Bool_match ww ] (all dead (type) Bool) }
+                                    (abs dead (type) ww)
+                                  ]
+                                  (abs dead (type) True)
+                                ]
+                                (all dead (type) dead)
+                              }
+                            )
+                          ]
+                          (abs dead (type) True)
+                        ]
+                        (all dead (type) dead)
+                      }
+                    )
+                  ]
+                  (abs
+                    dead
+                    (type)
+                    {
+                      [
+                        [
+                          [
+                            {
+                              [ { Extended_match (con integer) } ww ]
+                              (all dead (type) Bool)
+                            }
+                            (lam
+                              default_arg0
+                              (con integer)
+                              (abs
+                                dead
+                                (type)
+                                {
+                                  [
+                                    [
+                                      [
+                                        {
+                                          [
+                                            { Extended_match (con integer) } ww
+                                          ]
+                                          (all dead (type) Bool)
+                                        }
+                                        (lam
+                                          ipv
+                                          (con integer)
+                                          (abs
+                                            dead
+                                            (type)
+                                            {
+                                              [
+                                                [
+                                                  [
+                                                    {
+                                                      [
+                                                        {
+                                                          Extended_match
+                                                          (con integer)
+                                                        }
+                                                        ww
+                                                      ]
+                                                      (all dead (type) Bool)
+                                                    }
+                                                    (lam
+                                                      ipv
+                                                      (con integer)
+                                                      (abs
+                                                        dead
+                                                        (type)
+                                                        {
+                                                          [
+                                                            [
+                                                              [
+                                                                {
+                                                                  [
+                                                                    Ordering_match
+                                                                    [
+                                                                      [
+                                                                        fOrdInteger_ccompare
+                                                                        ipv
+                                                                      ]
+                                                                      ipv
+                                                                    ]
+                                                                  ]
+                                                                  (all dead (type) Bool)
+                                                                }
+                                                                (abs
+                                                                  dead
+                                                                  (type)
+                                                                  {
+                                                                    [
+                                                                      [
+                                                                        {
+                                                                          [
+                                                                            Bool_match
+                                                                            ww
+                                                                          ]
+                                                                          (all dead (type) Bool)
+                                                                        }
+                                                                        (abs
+                                                                          dead
+                                                                          (type)
+                                                                          ww
+                                                                        )
+                                                                      ]
+                                                                      (abs
+                                                                        dead
+                                                                        (type)
+                                                                        True
+                                                                      )
+                                                                    ]
+                                                                    (all dead (type) dead)
+                                                                  }
+                                                                )
+                                                              ]
+                                                              (abs
+                                                                dead
+                                                                (type)
+                                                                False
+                                                              )
+                                                            ]
+                                                            (abs
+                                                              dead (type) True
+                                                            )
+                                                          ]
+                                                          (all dead (type) dead)
+                                                        }
+                                                      )
+                                                    )
+                                                  ]
+                                                  (abs dead (type) (error Bool))
+                                                ]
+                                                (abs dead (type) True)
+                                              ]
+                                              (all dead (type) dead)
+                                            }
+                                          )
+                                        )
+                                      ]
+                                      (abs dead (type) (error Bool))
+                                    ]
+                                    (abs
+                                      dead
+                                      (type)
+                                      {
+                                        [
+                                          [
+                                            [
+                                              {
+                                                [
+                                                  {
+                                                    Extended_match (con integer)
+                                                  }
+                                                  ww
+                                                ]
+                                                (all dead (type) Bool)
+                                              }
+                                              (lam
+                                                ipv
+                                                (con integer)
+                                                (abs dead (type) False)
+                                              )
+                                            ]
+                                            (abs dead (type) (error Bool))
+                                          ]
+                                          (abs
+                                            dead
+                                            (type)
+                                            {
+                                              [
+                                                [
+                                                  {
+                                                    [ Bool_match ww ]
+                                                    (all dead (type) Bool)
+                                                  }
+                                                  (abs dead (type) ww)
+                                                ]
+                                                (abs dead (type) True)
+                                              ]
+                                              (all dead (type) dead)
+                                            }
+                                          )
+                                        ]
+                                        (all dead (type) dead)
+                                      }
+                                    )
+                                  ]
+                                  (all dead (type) dead)
+                                }
+                              )
+                            )
+                          ]
+                          (abs dead (type) False)
+                        ]
+                        (abs
+                          dead
+                          (type)
+                          {
+                            [
+                              [
+                                [
+                                  {
+                                    [ { Extended_match (con integer) } ww ]
+                                    (all dead (type) Bool)
+                                  }
+                                  (lam
+                                    ipv
+                                    (con integer)
+                                    (abs
+                                      dead
+                                      (type)
+                                      {
+                                        [
+                                          [
+                                            [
+                                              {
+                                                [
+                                                  {
+                                                    Extended_match (con integer)
+                                                  }
+                                                  ww
+                                                ]
+                                                (all dead (type) Bool)
+                                              }
+                                              (lam
+                                                ipv
+                                                (con integer)
+                                                (abs
+                                                  dead
+                                                  (type)
+                                                  {
+                                                    [
+                                                      [
+                                                        [
+                                                          {
+                                                            [
+                                                              Ordering_match
+                                                              [
+                                                                [
+                                                                  fOrdInteger_ccompare
+                                                                  ipv
+                                                                ]
+                                                                ipv
+                                                              ]
+                                                            ]
+                                                            (all dead (type) Bool)
+                                                          }
+                                                          (abs
+                                                            dead
+                                                            (type)
+                                                            {
+                                                              [
+                                                                [
+                                                                  {
+                                                                    [
+                                                                      Bool_match
+                                                                      ww
+                                                                    ]
+                                                                    (all dead (type) Bool)
+                                                                  }
+                                                                  (abs
+                                                                    dead
+                                                                    (type)
+                                                                    ww
+                                                                  )
+                                                                ]
+                                                                (abs
+                                                                  dead
+                                                                  (type)
+                                                                  True
+                                                                )
+                                                              ]
+                                                              (all dead (type) dead)
+                                                            }
+                                                          )
+                                                        ]
+                                                        (abs dead (type) False)
+                                                      ]
+                                                      (abs dead (type) True)
+                                                    ]
+                                                    (all dead (type) dead)
+                                                  }
+                                                )
+                                              )
+                                            ]
+                                            (abs dead (type) (error Bool))
+                                          ]
+                                          (abs dead (type) True)
+                                        ]
+                                        (all dead (type) dead)
+                                      }
+                                    )
+                                  )
+                                ]
+                                (abs dead (type) (error Bool))
+                              ]
+                              (abs
+                                dead
+                                (type)
+                                {
+                                  [
+                                    [
+                                      [
+                                        {
+                                          [
+                                            { Extended_match (con integer) } ww
+                                          ]
+                                          (all dead (type) Bool)
+                                        }
+                                        (lam
+                                          ipv
+                                          (con integer)
+                                          (abs dead (type) False)
+                                        )
+                                      ]
+                                      (abs dead (type) (error Bool))
+                                    ]
+                                    (abs
+                                      dead
+                                      (type)
+                                      {
+                                        [
+                                          [
+                                            {
+                                              [ Bool_match ww ]
+                                              (all dead (type) Bool)
+                                            }
+                                            (abs dead (type) ww)
+                                          ]
+                                          (abs dead (type) True)
+                                        ]
+                                        (all dead (type) dead)
+                                      }
+                                    )
+                                  ]
+                                  (all dead (type) dead)
+                                }
+                              )
+                            ]
+                            (all dead (type) dead)
+                          }
+                        )
+                      ]
+                      (all dead (type) dead)
+                    }
+                  )
+                ]
+                (all dead (type) dead)
+              }
+            )
+          )
+        )
+      )
+    )
+    (datatypebind
+      (datatype
+        (tyvardecl UpperBound (fun (type) (type)))
+        (tyvardecl a (type))
+        UpperBound_match
+        (vardecl UpperBound (fun [Extended a] (fun Bool [UpperBound a])))
+      )
+    )
+    (termbind
+      (strict)
+      (vardecl
+        sfOrdUpperBound0_c
+        (fun [UpperBound (con integer)] (fun [UpperBound (con integer)] Bool))
+      )
+      (lam
+        w
+        [UpperBound (con integer)]
+        (lam
+          w
+          [UpperBound (con integer)]
+          [
+            { [ { UpperBound_match (con integer) } w ] Bool }
+            (lam
+              ww
+              [Extended (con integer)]
+              (lam
+                ww
+                Bool
+                [
+                  { [ { UpperBound_match (con integer) } w ] Bool }
+                  (lam
+                    ww
+                    [Extended (con integer)]
+                    (lam ww Bool [ [ [ [ wsfOrdUpperBound0_c ww ] ww ] ww ] ww ]
+                    )
+                  )
+                ]
+              )
+            )
           ]
+        )
+      )
+    )
+    (termbind
+      (strict)
+      (vardecl
+        wscontains
+        (fun [Extended (con integer)] (fun Bool (fun [UpperBound (con integer)] (fun [Extended (con integer)] (fun Bool (fun [UpperBound (con integer)] Bool))))))
+      )
+      (lam
+        ww
+        [Extended (con integer)]
+        (lam
+          ww
+          Bool
+          (lam
+            ww
+            [UpperBound (con integer)]
+            (lam
+              ww
+              [Extended (con integer)]
+              (lam
+                ww
+                Bool
+                (lam
+                  ww
+                  [UpperBound (con integer)]
+                  (let
+                    (nonrec)
+                    (termbind
+                      (nonstrict)
+                      (vardecl j Bool)
+                      {
+                        [
+                          [
+                            { [ Bool_match ww ] (all dead (type) Bool) }
+                            (abs
+                              dead
+                              (type)
+                              {
+                                [
+                                  [
+                                    { [ Bool_match ww ] (all dead (type) Bool) }
+                                    (abs
+                                      dead
+                                      (type)
+                                      [ [ sfOrdUpperBound0_c ww ] ww ]
+                                    )
+                                  ]
+                                  (abs dead (type) False)
+                                ]
+                                (all dead (type) dead)
+                              }
+                            )
+                          ]
+                          (abs dead (type) [ [ sfOrdUpperBound0_c ww ] ww ])
+                        ]
+                        (all dead (type) dead)
+                      }
+                    )
+                    {
+                      [
+                        [
+                          [
+                            {
+                              [ { Extended_match (con integer) } ww ]
+                              (all dead (type) Bool)
+                            }
+                            (lam
+                              default_arg0
+                              (con integer)
+                              (abs
+                                dead
+                                (type)
+                                {
+                                  [
+                                    [
+                                      [
+                                        {
+                                          [
+                                            { Extended_match (con integer) } ww
+                                          ]
+                                          (all dead (type) Bool)
+                                        }
+                                        (lam
+                                          default_arg0
+                                          (con integer)
+                                          (abs
+                                            dead
+                                            (type)
+                                            {
+                                              [
+                                                [
+                                                  [
+                                                    {
+                                                      [
+                                                        {
+                                                          Extended_match
+                                                          (con integer)
+                                                        }
+                                                        ww
+                                                      ]
+                                                      (all dead (type) Bool)
+                                                    }
+                                                    (lam
+                                                      ipv
+                                                      (con integer)
+                                                      (abs
+                                                        dead
+                                                        (type)
+                                                        {
+                                                          [
+                                                            [
+                                                              [
+                                                                {
+                                                                  [
+                                                                    {
+                                                                      Extended_match
+                                                                      (con integer)
+                                                                    }
+                                                                    ww
+                                                                  ]
+                                                                  (all dead (type) Bool)
+                                                                }
+                                                                (lam
+                                                                  ipv
+                                                                  (con integer)
+                                                                  (abs
+                                                                    dead
+                                                                    (type)
+                                                                    {
+                                                                      [
+                                                                        [
+                                                                          [
+                                                                            {
+                                                                              [
+                                                                                Ordering_match
+                                                                                [
+                                                                                  [
+                                                                                    fOrdInteger_ccompare
+                                                                                    ipv
+                                                                                  ]
+                                                                                  ipv
+                                                                                ]
+                                                                              ]
+                                                                              (all dead (type) Bool)
+                                                                            }
+                                                                            (abs
+                                                                              dead
+                                                                              (type)
+                                                                              j
+                                                                            )
+                                                                          ]
+                                                                          (abs
+                                                                            dead
+                                                                            (type)
+                                                                            False
+                                                                          )
+                                                                        ]
+                                                                        (abs
+                                                                          dead
+                                                                          (type)
+                                                                          [
+                                                                            [
+                                                                              sfOrdUpperBound0_c
+                                                                              ww
+                                                                            ]
+                                                                            ww
+                                                                          ]
+                                                                        )
+                                                                      ]
+                                                                      (all dead (type) dead)
+                                                                    }
+                                                                  )
+                                                                )
+                                                              ]
+                                                              (abs
+                                                                dead
+                                                                (type)
+                                                                (error Bool)
+                                                              )
+                                                            ]
+                                                            (abs
+                                                              dead
+                                                              (type)
+                                                              [
+                                                                [
+                                                                  sfOrdUpperBound0_c
+                                                                  ww
+                                                                ]
+                                                                ww
+                                                              ]
+                                                            )
+                                                          ]
+                                                          (all dead (type) dead)
+                                                        }
+                                                      )
+                                                    )
+                                                  ]
+                                                  (abs dead (type) (error Bool))
+                                                ]
+                                                (abs
+                                                  dead
+                                                  (type)
+                                                  {
+                                                    [
+                                                      [
+                                                        [
+                                                          {
+                                                            [
+                                                              {
+                                                                Extended_match
+                                                                (con integer)
+                                                              }
+                                                              ww
+                                                            ]
+                                                            (all dead (type) Bool)
+                                                          }
+                                                          (lam
+                                                            ipv
+                                                            (con integer)
+                                                            (abs
+                                                              dead (type) False
+                                                            )
+                                                          )
+                                                        ]
+                                                        (abs
+                                                          dead
+                                                          (type)
+                                                          (error Bool)
+                                                        )
+                                                      ]
+                                                      (abs dead (type) j)
+                                                    ]
+                                                    (all dead (type) dead)
+                                                  }
+                                                )
+                                              ]
+                                              (all dead (type) dead)
+                                            }
+                                          )
+                                        )
+                                      ]
+                                      (abs dead (type) False)
+                                    ]
+                                    (abs
+                                      dead
+                                      (type)
+                                      {
+                                        [
+                                          [
+                                            [
+                                              {
+                                                [
+                                                  {
+                                                    Extended_match (con integer)
+                                                  }
+                                                  ww
+                                                ]
+                                                (all dead (type) Bool)
+                                              }
+                                              (lam
+                                                ipv
+                                                (con integer)
+                                                (abs
+                                                  dead
+                                                  (type)
+                                                  {
+                                                    [
+                                                      [
+                                                        [
+                                                          {
+                                                            [
+                                                              {
+                                                                Extended_match
+                                                                (con integer)
+                                                              }
+                                                              ww
+                                                            ]
+                                                            (all dead (type) Bool)
+                                                          }
+                                                          (lam
+                                                            ipv
+                                                            (con integer)
+                                                            (abs
+                                                              dead
+                                                              (type)
+                                                              {
+                                                                [
+                                                                  [
+                                                                    [
+                                                                      {
+                                                                        [
+                                                                          Ordering_match
+                                                                          [
+                                                                            [
+                                                                              fOrdInteger_ccompare
+                                                                              ipv
+                                                                            ]
+                                                                            ipv
+                                                                          ]
+                                                                        ]
+                                                                        (all dead (type) Bool)
+                                                                      }
+                                                                      (abs
+                                                                        dead
+                                                                        (type)
+                                                                        j
+                                                                      )
+                                                                    ]
+                                                                    (abs
+                                                                      dead
+                                                                      (type)
+                                                                      False
+                                                                    )
+                                                                  ]
+                                                                  (abs
+                                                                    dead
+                                                                    (type)
+                                                                    [
+                                                                      [
+                                                                        sfOrdUpperBound0_c
+                                                                        ww
+                                                                      ]
+                                                                      ww
+                                                                    ]
+                                                                  )
+                                                                ]
+                                                                (all dead (type) dead)
+                                                              }
+                                                            )
+                                                          )
+                                                        ]
+                                                        (abs
+                                                          dead
+                                                          (type)
+                                                          (error Bool)
+                                                        )
+                                                      ]
+                                                      (abs
+                                                        dead
+                                                        (type)
+                                                        [
+                                                          [
+                                                            sfOrdUpperBound0_c
+                                                            ww
+                                                          ]
+                                                          ww
+                                                        ]
+                                                      )
+                                                    ]
+                                                    (all dead (type) dead)
+                                                  }
+                                                )
+                                              )
+                                            ]
+                                            (abs dead (type) (error Bool))
+                                          ]
+                                          (abs
+                                            dead
+                                            (type)
+                                            {
+                                              [
+                                                [
+                                                  [
+                                                    {
+                                                      [
+                                                        {
+                                                          Extended_match
+                                                          (con integer)
+                                                        }
+                                                        ww
+                                                      ]
+                                                      (all dead (type) Bool)
+                                                    }
+                                                    (lam
+                                                      ipv
+                                                      (con integer)
+                                                      (abs dead (type) False)
+                                                    )
+                                                  ]
+                                                  (abs dead (type) (error Bool))
+                                                ]
+                                                (abs dead (type) j)
+                                              ]
+                                              (all dead (type) dead)
+                                            }
+                                          )
+                                        ]
+                                        (all dead (type) dead)
+                                      }
+                                    )
+                                  ]
+                                  (all dead (type) dead)
+                                }
+                              )
+                            )
+                          ]
+                          (abs
+                            dead
+                            (type)
+                            {
+                              [
+                                [
+                                  [
+                                    {
+                                      [ { Extended_match (con integer) } ww ]
+                                      (all dead (type) Bool)
+                                    }
+                                    (lam
+                                      default_arg0
+                                      (con integer)
+                                      (abs
+                                        dead
+                                        (type)
+                                        [ [ sfOrdUpperBound0_c ww ] ww ]
+                                      )
+                                    )
+                                  ]
+                                  (abs dead (type) j)
+                                ]
+                                (abs
+                                  dead (type) [ [ sfOrdUpperBound0_c ww ] ww ]
+                                )
+                              ]
+                              (all dead (type) dead)
+                            }
+                          )
+                        ]
+                        (abs
+                          dead
+                          (type)
+                          {
+                            [
+                              [
+                                [
+                                  {
+                                    [ { Extended_match (con integer) } ww ]
+                                    (all dead (type) Bool)
+                                  }
+                                  (lam
+                                    default_arg0
+                                    (con integer)
+                                    (abs
+                                      dead
+                                      (type)
+                                      {
+                                        [
+                                          [
+                                            [
+                                              {
+                                                [
+                                                  {
+                                                    Extended_match (con integer)
+                                                  }
+                                                  ww
+                                                ]
+                                                (all dead (type) Bool)
+                                              }
+                                              (lam
+                                                ipv
+                                                (con integer)
+                                                (abs
+                                                  dead
+                                                  (type)
+                                                  {
+                                                    [
+                                                      [
+                                                        [
+                                                          {
+                                                            [
+                                                              {
+                                                                Extended_match
+                                                                (con integer)
+                                                              }
+                                                              ww
+                                                            ]
+                                                            (all dead (type) Bool)
+                                                          }
+                                                          (lam
+                                                            ipv
+                                                            (con integer)
+                                                            (abs
+                                                              dead
+                                                              (type)
+                                                              {
+                                                                [
+                                                                  [
+                                                                    [
+                                                                      {
+                                                                        [
+                                                                          Ordering_match
+                                                                          [
+                                                                            [
+                                                                              fOrdInteger_ccompare
+                                                                              ipv
+                                                                            ]
+                                                                            ipv
+                                                                          ]
+                                                                        ]
+                                                                        (all dead (type) Bool)
+                                                                      }
+                                                                      (abs
+                                                                        dead
+                                                                        (type)
+                                                                        j
+                                                                      )
+                                                                    ]
+                                                                    (abs
+                                                                      dead
+                                                                      (type)
+                                                                      False
+                                                                    )
+                                                                  ]
+                                                                  (abs
+                                                                    dead
+                                                                    (type)
+                                                                    [
+                                                                      [
+                                                                        sfOrdUpperBound0_c
+                                                                        ww
+                                                                      ]
+                                                                      ww
+                                                                    ]
+                                                                  )
+                                                                ]
+                                                                (all dead (type) dead)
+                                                              }
+                                                            )
+                                                          )
+                                                        ]
+                                                        (abs
+                                                          dead
+                                                          (type)
+                                                          (error Bool)
+                                                        )
+                                                      ]
+                                                      (abs
+                                                        dead
+                                                        (type)
+                                                        [
+                                                          [
+                                                            sfOrdUpperBound0_c
+                                                            ww
+                                                          ]
+                                                          ww
+                                                        ]
+                                                      )
+                                                    ]
+                                                    (all dead (type) dead)
+                                                  }
+                                                )
+                                              )
+                                            ]
+                                            (abs dead (type) (error Bool))
+                                          ]
+                                          (abs
+                                            dead
+                                            (type)
+                                            {
+                                              [
+                                                [
+                                                  [
+                                                    {
+                                                      [
+                                                        {
+                                                          Extended_match
+                                                          (con integer)
+                                                        }
+                                                        ww
+                                                      ]
+                                                      (all dead (type) Bool)
+                                                    }
+                                                    (lam
+                                                      ipv
+                                                      (con integer)
+                                                      (abs dead (type) False)
+                                                    )
+                                                  ]
+                                                  (abs dead (type) (error Bool))
+                                                ]
+                                                (abs dead (type) j)
+                                              ]
+                                              (all dead (type) dead)
+                                            }
+                                          )
+                                        ]
+                                        (all dead (type) dead)
+                                      }
+                                    )
+                                  )
+                                ]
+                                (abs dead (type) False)
+                              ]
+                              (abs
+                                dead
+                                (type)
+                                {
+                                  [
+                                    [
+                                      [
+                                        {
+                                          [
+                                            { Extended_match (con integer) } ww
+                                          ]
+                                          (all dead (type) Bool)
+                                        }
+                                        (lam
+                                          ipv
+                                          (con integer)
+                                          (abs
+                                            dead
+                                            (type)
+                                            {
+                                              [
+                                                [
+                                                  [
+                                                    {
+                                                      [
+                                                        {
+                                                          Extended_match
+                                                          (con integer)
+                                                        }
+                                                        ww
+                                                      ]
+                                                      (all dead (type) Bool)
+                                                    }
+                                                    (lam
+                                                      ipv
+                                                      (con integer)
+                                                      (abs
+                                                        dead
+                                                        (type)
+                                                        {
+                                                          [
+                                                            [
+                                                              [
+                                                                {
+                                                                  [
+                                                                    Ordering_match
+                                                                    [
+                                                                      [
+                                                                        fOrdInteger_ccompare
+                                                                        ipv
+                                                                      ]
+                                                                      ipv
+                                                                    ]
+                                                                  ]
+                                                                  (all dead (type) Bool)
+                                                                }
+                                                                (abs
+                                                                  dead (type) j
+                                                                )
+                                                              ]
+                                                              (abs
+                                                                dead
+                                                                (type)
+                                                                False
+                                                              )
+                                                            ]
+                                                            (abs
+                                                              dead
+                                                              (type)
+                                                              [
+                                                                [
+                                                                  sfOrdUpperBound0_c
+                                                                  ww
+                                                                ]
+                                                                ww
+                                                              ]
+                                                            )
+                                                          ]
+                                                          (all dead (type) dead)
+                                                        }
+                                                      )
+                                                    )
+                                                  ]
+                                                  (abs dead (type) (error Bool))
+                                                ]
+                                                (abs
+                                                  dead
+                                                  (type)
+                                                  [
+                                                    [ sfOrdUpperBound0_c ww ] ww
+                                                  ]
+                                                )
+                                              ]
+                                              (all dead (type) dead)
+                                            }
+                                          )
+                                        )
+                                      ]
+                                      (abs dead (type) (error Bool))
+                                    ]
+                                    (abs
+                                      dead
+                                      (type)
+                                      {
+                                        [
+                                          [
+                                            [
+                                              {
+                                                [
+                                                  {
+                                                    Extended_match (con integer)
+                                                  }
+                                                  ww
+                                                ]
+                                                (all dead (type) Bool)
+                                              }
+                                              (lam
+                                                ipv
+                                                (con integer)
+                                                (abs dead (type) False)
+                                              )
+                                            ]
+                                            (abs dead (type) (error Bool))
+                                          ]
+                                          (abs dead (type) j)
+                                        ]
+                                        (all dead (type) dead)
+                                      }
+                                    )
+                                  ]
+                                  (all dead (type) dead)
+                                }
+                              )
+                            ]
+                            (all dead (type) dead)
+                          }
+                        )
+                      ]
+                      (all dead (type) dead)
+                    }
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+    (termbind
+      (strict)
+      (vardecl
+        wvalidateCrowdfunding
+        (fun (con integer) (fun [Extended (con integer)] (fun Bool (fun [UpperBound (con integer)] Bool))))
+      )
+      (lam
+        ww
+        (con integer)
+        (lam
+          ww
+          [Extended (con integer)]
+          (lam
+            ww
+            Bool
+            (lam
+              ww
+              [UpperBound (con integer)]
+              {
+                [
+                  [
+                    {
+                      [
+                        Bool_match
+                        [
+                          [
+                            [
+                              [
+                                [
+                                  [ wscontains [ { Finite (con integer) } ww ] ]
+                                  True
+                                ]
+                                [
+                                  [
+                                    { UpperBound (con integer) }
+                                    { PosInf (con integer) }
+                                  ]
+                                  True
+                                ]
+                              ]
+                              ww
+                            ]
+                            ww
+                          ]
+                          ww
+                        ]
+                      ]
+                      (all dead (type) Bool)
+                    }
+                    (abs dead (type) True)
+                  ]
+                  (abs
+                    dead
+                    (type)
+                    [
+                      [
+                        { (builtin chooseUnit) Bool }
+                        [
+                          (builtin trace)
+                          (con string "Cannot close before the deadline")
+                        ]
+                      ]
+                      False
+                    ]
+                  )
+                ]
+                (all dead (type) dead)
+              }
+            )
+          )
+        )
+      )
+    )
+    (datatypebind
+      (datatype (tyvardecl Unit (type))  Unit_match (vardecl Unit Unit))
+    )
+    (datatypebind
+      (datatype
+        (tyvardecl CrowdfundingParams (type))
+
+        CrowdfundingParams_match
+        (vardecl
+          CrowdfundingParams
+          (fun (con integer) (fun (con integer) (fun (con bytestring) (fun (con integer) CrowdfundingParams))))
         )
       )
     )
@@ -126,28 +1785,10 @@
     )
     (datatypebind
       (datatype
-        (tyvardecl Extended (fun (type) (type)))
-        (tyvardecl a (type))
-        Extended_match
-        (vardecl Finite (fun a [Extended a]))
-        (vardecl NegInf [Extended a])
-        (vardecl PosInf [Extended a])
-      )
-    )
-    (datatypebind
-      (datatype
         (tyvardecl LowerBound (fun (type) (type)))
         (tyvardecl a (type))
         LowerBound_match
         (vardecl LowerBound (fun [Extended a] (fun Bool [LowerBound a])))
-      )
-    )
-    (datatypebind
-      (datatype
-        (tyvardecl UpperBound (fun (type) (type)))
-        (tyvardecl a (type))
-        UpperBound_match
-        (vardecl UpperBound (fun [Extended a] (fun Bool [UpperBound a])))
       )
     )
     (datatypebind
@@ -240,20 +1881,153 @@
         (termbind
           (strict)
           (vardecl
-            validateGuess
-            (fun (con bytestring) (fun (con bytestring) (fun ScriptContext Bool)))
+            validateCrowdfunding
+            (fun CrowdfundingParams (fun Unit (fun Unit (fun ScriptContext Bool))))
           )
           (lam
             w
-            (con bytestring)
+            CrowdfundingParams
             (lam
               w
-              (con bytestring)
-              (lam w ScriptContext [ [ wvalidateGuess w ] w ])
+              Unit
+              (lam
+                w
+                Unit
+                (lam
+                  w
+                  ScriptContext
+                  [
+                    { [ CrowdfundingParams_match w ] Bool }
+                    (lam
+                      ww
+                      (con integer)
+                      (lam
+                        ww
+                        (con integer)
+                        (lam
+                          ww
+                          (con bytestring)
+                          (lam
+                            ww
+                            (con integer)
+                            [
+                              { [ ScriptContext_match w ] Bool }
+                              (lam
+                                ww
+                                TxInfo
+                                (lam
+                                  ww
+                                  ScriptPurpose
+                                  [
+                                    { [ TxInfo_match ww ] Bool }
+                                    (lam
+                                      ww
+                                      [List TxInInfo]
+                                      (lam
+                                        ww
+                                        [List TxOut]
+                                        (lam
+                                          ww
+                                          [[(lam k (type) (lam v (type) [List [[Tuple2 k] v]])) (con bytestring)] [[(lam k (type) (lam v (type) [List [[Tuple2 k] v]])) (con bytestring)] (con integer)]]
+                                          (lam
+                                            ww
+                                            [[(lam k (type) (lam v (type) [List [[Tuple2 k] v]])) (con bytestring)] [[(lam k (type) (lam v (type) [List [[Tuple2 k] v]])) (con bytestring)] (con integer)]]
+                                            (lam
+                                              ww
+                                              [List DCert]
+                                              (lam
+                                                ww
+                                                [List [[Tuple2 StakingCredential] (con integer)]]
+                                                (lam
+                                                  ww
+                                                  [Interval (con integer)]
+                                                  (lam
+                                                    ww
+                                                    [List (con bytestring)]
+                                                    (lam
+                                                      ww
+                                                      [List [[Tuple2 (con bytestring)] (con data)]]
+                                                      (lam
+                                                        ww
+                                                        (con bytestring)
+                                                        [
+                                                          {
+                                                            [
+                                                              {
+                                                                Interval_match
+                                                                (con integer)
+                                                              }
+                                                              ww
+                                                            ]
+                                                            Bool
+                                                          }
+                                                          (lam
+                                                            ww
+                                                            [LowerBound (con integer)]
+                                                            (lam
+                                                              ww
+                                                              [UpperBound (con integer)]
+                                                              [
+                                                                {
+                                                                  [
+                                                                    {
+                                                                      LowerBound_match
+                                                                      (con integer)
+                                                                    }
+                                                                    ww
+                                                                  ]
+                                                                  Bool
+                                                                }
+                                                                (lam
+                                                                  ww
+                                                                  [Extended (con integer)]
+                                                                  (lam
+                                                                    ww
+                                                                    Bool
+                                                                    [
+                                                                      [
+                                                                        [
+                                                                          [
+                                                                            wvalidateCrowdfunding
+                                                                            ww
+                                                                          ]
+                                                                          ww
+                                                                        ]
+                                                                        ww
+                                                                      ]
+                                                                      ww
+                                                                    ]
+                                                                  )
+                                                                )
+                                                              ]
+                                                            )
+                                                          )
+                                                        ]
+                                                      )
+                                                    )
+                                                  )
+                                                )
+                                              )
+                                            )
+                                          )
+                                        )
+                                      )
+                                    )
+                                  ]
+                                )
+                              )
+                            ]
+                          )
+                        )
+                      )
+                    )
+                  ]
+                )
+              )
             )
           )
         )
-        validateGuess
+        validateCrowdfunding
       )
     )
   )
