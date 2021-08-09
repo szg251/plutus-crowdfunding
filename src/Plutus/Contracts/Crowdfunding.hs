@@ -40,6 +40,7 @@ module Plutus.Contracts.Crowdfunding (
   supportTrace,
   closeTrace,
   myTrace,
+  runMyTrace,
 ) where
 
 import Control.Monad (void)
@@ -85,15 +86,20 @@ data CrowdfundingParams = CrowdfundingParams
 
 PlutusTx.makeLift ''CrowdfundingParams
 
-data Crowdfunding
-instance Scripts.ValidatorTypes Crowdfunding where
-  type RedeemerType Crowdfunding = CrowdfundingAction
-  type DatumType Crowdfunding = ()
-
 data CrowdfundingAction = Collect | Return
   deriving (Relude.Show)
 
 PlutusTx.unstableMakeIsData ''CrowdfundingAction
+
+newtype SupportDatum = SupportDatum {refundAddress :: PubKeyHash}
+  deriving (Relude.Show)
+
+PlutusTx.unstableMakeIsData ''SupportDatum
+
+data Crowdfunding
+instance Scripts.ValidatorTypes Crowdfunding where
+  type RedeemerType Crowdfunding = CrowdfundingAction
+  type DatumType Crowdfunding = SupportDatum
 
 {-# INLINEABLE mkRewardTokenPolicy #-}
 mkRewardTokenPolicy :: CrowdfundingParams -> Address -> () -> ScriptContext -> Bool
@@ -137,7 +143,7 @@ rewardTokenCurSymbol = Ledger.scriptCurrencySymbol . rewardTokenPolicy
 
 -- | The validation function (Params -> DataValue -> RedeemerValue -> ScriptContext -> Bool)
 {-# INLINEABLE validateCrowdfunding #-}
-validateCrowdfunding :: CrowdfundingParams -> () -> CrowdfundingAction -> ScriptContext -> Bool
+validateCrowdfunding :: CrowdfundingParams -> SupportDatum -> CrowdfundingAction -> ScriptContext -> Bool
 validateCrowdfunding CrowdfundingParams{crowdfundingDeadline, crowdfundingTargetAmount, crowdfundingOwnerPkh} _ action ctx =
   case action of
     Collect ->
@@ -146,7 +152,7 @@ validateCrowdfunding CrowdfundingParams{crowdfundingDeadline, crowdfundingTarget
         && traceIfFalse "Cannot close before the deadline" isAfterDeadline
         && traceIfFalse "Successful crowdfunding assets must be sent to owner" isSentToOwner
     Return ->
-      traceIfFalse "Must not meet the crowdfunding target for refund" (not isTargetMet)
+      traceIfFalse "Cannot meet the crowdfunding target to get refund" (not isTargetMet)
         && traceIfFalse "Cannot close before the deadline" isAfterDeadline
         && traceIfFalse "Each supporter must get a refund" isSentToSupporters
  where
@@ -160,20 +166,24 @@ validateCrowdfunding CrowdfundingParams{crowdfundingDeadline, crowdfundingTarget
   isSentToSupporters =
     all
       ( \i ->
-          any (\o -> Ledger.txOutAddress o == Ledger.txOutAddress i) txOuts
+          any (\o -> Just (Ledger.txOutAddress o) == fmap Ledger.pubKeyHashAddress (findPkh i)) txOuts
       )
       txIns
 
   collectedAmt =
-    sum $
-      [ Value.assetClassValueOf (Ledger.txOutValue i) (AssetClass (Ada.adaSymbol, Ada.adaToken))
-      | i <- txIns
-      ]
+    sum [Value.valueOf (Ledger.txOutValue i) Ada.adaSymbol Ada.adaToken | i <- txIns]
 
   txInfo = Ledger.scriptContextTxInfo ctx
   txOuts = Ledger.txInfoOutputs txInfo
-  txIns = map Ledger.txInInfoResolved $ Ledger.txInfoInputs txInfo
+  txIns =
+    filter (isJust . findPkh) $ map Ledger.txInInfoResolved $ Ledger.txInfoInputs txInfo
   validRange = Ledger.txInfoValidRange txInfo
+
+  findPkh txout = do
+    datumH <- Ledger.txOutDatum txout
+    Datum datum <- Ledger.findDatum datumH txInfo
+    SupportDatum{refundAddress} <- PlutusTx.fromBuiltinData datum
+    Just refundAddress
 
 -- | The validator script of the crowdfunding.
 crowdfundingValidator :: CrowdfundingParams -> Validator
@@ -187,7 +197,7 @@ crowdfundingInstance cfParams =
     )
     $$(PlutusTx.compile [||wrap||])
  where
-  wrap = Scripts.wrapValidator @() @CrowdfundingAction
+  wrap = Scripts.wrapValidator @SupportDatum @CrowdfundingAction
 
 crowdfundingAddress :: CrowdfundingParams -> Address
 crowdfundingAddress = Ledger.scriptAddress . crowdfundingValidator
@@ -215,6 +225,8 @@ support :: (AsContractError e) => Promise () CrowdfundingSchema e ()
 support = endpoint @"support" @SupportParams $ \(SupportParams cfParams amt) -> do
   logInfo @Relude.String $ "Pay " <> Relude.show amt <> " to the script"
 
+  pkh <- Ledger.pubKeyHash <$> ownPubKey
+
   let rewardAmt = amt `Relude.quot` crowdfundingRewardRatio cfParams
       rewardTokens = Value.singleton (rewardTokenCurSymbol cfParams) "reward token" rewardAmt
 
@@ -224,8 +236,10 @@ support = endpoint @"support" @SupportParams $ \(SupportParams cfParams amt) -> 
 
       val = Ada.lovelaceValueOf amt
 
+      datum = SupportDatum pkh
+
       tx =
-        Constraints.mustPayToTheScript () val
+        Constraints.mustPayToTheScript datum val
           <> Constraints.mustMintValue rewardTokens
           <> Constraints.mustValidateIn (Interval.to (crowdfundingDeadline cfParams))
 
@@ -238,7 +252,7 @@ close = endpoint @"close" @CloseParams $ \(CloseParams cfParams) -> do
   utxos <- utxoAt (crowdfundingAddress cfParams)
 
   let collectedVal = sum $ Ledger.txOutValue . Ledger.txOutTxOut <$> Map.elems utxos
-      collectedAmt = Value.assetClassValueOf collectedVal (AssetClass (Ada.adaSymbol, Ada.adaToken))
+      collectedAmt = Value.valueOf collectedVal Ada.adaSymbol Ada.adaToken
 
   if collectedAmt >= crowdfundingTargetAmount cfParams
     then collectFunds cfParams utxos
@@ -258,7 +272,7 @@ collectFunds cfParams utxos = do
 
       redeemer = Ledger.Redeemer (PlutusTx.toBuiltinData Collect)
       tx =
-        mconcat (map (`Constraints.mustSpendScriptOutput` redeemer) (Map.keys utxos))
+        mconcat [Constraints.mustSpendScriptOutput utxo redeemer | utxo <- Map.keys utxos]
           <> Constraints.mustBeSignedBy (crowdfundingOwnerPkh cfParams)
           <> Constraints.mustValidateIn (Interval.from (crowdfundingDeadline cfParams))
 
@@ -272,8 +286,7 @@ returnFunds ::
   Contract () CrowdfundingSchema e ()
 returnFunds cfParams utxos = do
   logInfo @Relude.String "Crowdfunding unsuccesful, returning funds"
-  let supporters = findSupporter <$> Map.elems utxos
-  logInfo @Relude.String $ "supporter count:" ++ Relude.show supporters
+  let supporters = map findSupporter $ Map.elems utxos
 
   let lookups =
         Constraints.unspentOutputs utxos
@@ -287,53 +300,56 @@ returnFunds cfParams utxos = do
 
   void $ submitTxConstraintsWith @Crowdfunding lookups tx
 
-{-# INLINEABLE findSupporter #-}
 findSupporter :: TxOutTx -> Maybe (PubKeyHash, Value)
 findSupporter =
   discardUnknown
     . Relude.bimap getPkh getValue
     . Tuple.dup
  where
-  getPkh =
-    fmap Ledger.pubKeyHash
-      . Map.keys
-      . Ledger.txSignatures
-      . Ledger.txOutTxTx
+  getPkh txOutTx = do
+    let tx = Ledger.txOutTxTx txOutTx
+    datumH <- Ledger.txOutDatum $ Ledger.txOutTxOut txOutTx
+    Datum datum <- Ledger.lookupDatum tx datumH
+    SupportDatum{refundAddress} <- PlutusTx.fromBuiltinData datum
+    Just refundAddress
 
   getValue = Ledger.txOutValue . Ledger.txOutTxOut
 
-  discardUnknown ([pkh], v) = Just (pkh, v)
+  discardUnknown (Just pkh, v) = Just (pkh, v)
   discardUnknown _ = Nothing
 
 supportTrace :: Wallet -> CrowdfundingParams -> Integer -> EmulatorTrace ()
 supportTrace wallet cfParams amount = do
-  hdl <- Trace.activateContractWallet wallet (support @ContractError)
+  hdl <- Trace.activateContractWallet wallet (crowdfunding @ContractError)
   void $ Trace.waitNSlots 1
   Trace.callEndpoint @"support" hdl (SupportParams cfParams amount)
   void $ Trace.waitNSlots 1
 
 closeTrace :: Wallet -> CrowdfundingParams -> EmulatorTrace ()
 closeTrace wallet cfParams = do
-  hdl <- Trace.activateContractWallet wallet (close @ContractError)
+  hdl <- Trace.activateContractWallet wallet (crowdfunding @ContractError)
   void $ Trace.waitNSlots 1
   Trace.callEndpoint @"close" hdl (CloseParams cfParams)
-  void $ Trace.waitNSlots 2
+  void $ Trace.waitNSlots 1
 
-myTrace :: Relude.IO ()
-myTrace = do
+myTrace :: Wallet -> Wallet -> Wallet -> CrowdfundingParams -> EmulatorTrace ()
+myTrace w1 w2 w3 cfParams = do
+  supportTrace w2 cfParams 500_000
+  supportTrace w3 cfParams 480_000
+  void $ Trace.waitUntilTime (crowdfundingDeadline cfParams)
+  closeTrace w1 cfParams
+
+runMyTrace :: Relude.IO ()
+runMyTrace = do
   let deadline = 1596059100000
-  runEmulatorTraceIO $ do
-    let w1 = Wallet 1
-    let w2 = Wallet 2
-    let w3 = Wallet 3
-    let cfParams =
-          CrowdfundingParams
-            { crowdfundingDeadline = deadline
-            , crowdfundingTargetAmount = 1_000_000
-            , crowdfundingOwnerPkh = Ledger.pubKeyHash $ walletPubKey w1
-            , crowdfundingRewardRatio = 1_000
-            }
-    supportTrace w2 cfParams 500_000
-    supportTrace w3 cfParams 550_000
-    void $ Trace.waitUntilTime deadline
-    closeTrace w1 cfParams
+  let w1 = Wallet 1
+  let w2 = Wallet 2
+  let w3 = Wallet 3
+  let cfParams =
+        CrowdfundingParams
+          { crowdfundingDeadline = deadline
+          , crowdfundingTargetAmount = 1_000_000
+          , crowdfundingOwnerPkh = Ledger.pubKeyHash $ walletPubKey w1
+          , crowdfundingRewardRatio = 1_000
+          }
+  runEmulatorTraceIO $ myTrace w1 w2 w3 cfParams

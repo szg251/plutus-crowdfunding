@@ -70,6 +70,7 @@ test-suite plutus-crowdfunding-test
     , tasty
     , tasty-hedgehog  >=0.2.0.0
     , tasty-hunit
+    , lens
 
 executable plutus-crowdfunding-pab
   main-is:        Main.hs
