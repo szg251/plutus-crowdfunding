@@ -27,7 +27,9 @@ module Plutus.Contracts.Crowdfunding (
   CrowdfundingSchema,
   CrowdfundingParams (..),
   SupportParams (..),
+  CloseParams (..),
   rewardTokenCurSymbol,
+  rewardTokenName,
 
   -- * Scripts
   crowdfundingValidator,
@@ -60,7 +62,7 @@ import Ledger.AddressMap (UtxoMap)
 import qualified Ledger.Constraints as Constraints
 import qualified Ledger.Interval as Interval
 import qualified Ledger.Typed.Scripts as Scripts
-import Ledger.Value as Value
+import qualified Ledger.Value as Value
 import Plutus.Contract
 import Plutus.Contract.Schema ()
 import Plutus.Contract.Types
@@ -113,23 +115,17 @@ mkRewardTokenPolicy cfParams@CrowdfundingParams{crowdfundingOwnerPkh, crowdfundi
   validRange = Ledger.txInfoValidRange txInfo
 
   isRewardRatioOk = rewardAmt * crowdfundingRewardRatio cfParams <= supportAmt
+  ownAddress = Ledger.txOutAddress . Ledger.txInInfoResolved <$> Ledger.findOwnInput ctx
 
   supportTxOuts =
     filter (\o -> Ledger.txOutAddress o == scriptAddress) $ Ledger.txInfoOutputs txInfo
-  rewardTxOuts =
-    filter (\o -> Ledger.txOutAddress o /= scriptAddress) $ Ledger.txInfoOutputs txInfo
-
-  adaAssetClass = AssetClass (Ada.adaSymbol, Ada.adaToken)
+  adaAssetClass = Value.assetClass Ada.adaSymbol Ada.adaToken
   supportAmt =
-    sum $
-      flip Value.assetClassValueOf adaAssetClass . Ledger.txOutValue
-        <$> supportTxOuts
+    sum $ flip Value.assetClassValueOf adaAssetClass . Ledger.txOutValue <$> supportTxOuts
 
-  ownAssetClass = AssetClass (Ledger.ownCurrencySymbol ctx, TokenName "reward token")
+  ownAssetClass = Value.assetClass (Ledger.ownCurrencySymbol ctx) rewardTokenName
   rewardAmt =
-    sum $
-      flip Value.assetClassValueOf ownAssetClass . Ledger.txOutValue
-        <$> rewardTxOuts
+    Value.assetClassValueOf (Ledger.txInfoMint txInfo) ownAssetClass
 
 rewardTokenPolicy :: CrowdfundingParams -> Scripts.MintingPolicy
 rewardTokenPolicy cfParams =
@@ -140,6 +136,10 @@ rewardTokenPolicy cfParams =
 
 rewardTokenCurSymbol :: CrowdfundingParams -> CurrencySymbol
 rewardTokenCurSymbol = Ledger.scriptCurrencySymbol . rewardTokenPolicy
+
+{-# INLINEABLE rewardTokenName #-}
+rewardTokenName :: TokenName
+rewardTokenName = Value.TokenName "reward token"
 
 -- | The validation function (Params -> DataValue -> RedeemerValue -> ScriptContext -> Bool)
 {-# INLINEABLE validateCrowdfunding #-}
@@ -219,7 +219,7 @@ newtype CloseParams = CloseParams {cpCrowdfundingParams :: CrowdfundingParams}
 
 crowdfunding :: (AsContractError e, ToJSON e) => Contract () CrowdfundingSchema e ()
 crowdfunding =
-  selectList [support, close]
+  selectList [support, close] >> crowdfunding
 
 support :: (AsContractError e) => Promise () CrowdfundingSchema e ()
 support = endpoint @"support" @SupportParams $ \(SupportParams cfParams amt) -> do
@@ -228,7 +228,7 @@ support = endpoint @"support" @SupportParams $ \(SupportParams cfParams amt) -> 
   pkh <- Ledger.pubKeyHash <$> ownPubKey
 
   let rewardAmt = amt `Relude.quot` crowdfundingRewardRatio cfParams
-      rewardTokens = Value.singleton (rewardTokenCurSymbol cfParams) "reward token" rewardAmt
+      rewardTokens = Value.singleton (rewardTokenCurSymbol cfParams) rewardTokenName rewardAmt
 
       lookups =
         Constraints.typedValidatorLookups (crowdfundingInstance cfParams)

@@ -3,6 +3,7 @@
 module Main (main) where
 
 import qualified Spec.Crowdfunding
+import qualified Spec.Model
 import Test.Tasty
 import Test.Tasty.Hedgehog (HedgehogTestLimit (..))
 
@@ -22,4 +23,5 @@ tests =
     testGroup
       "use cases"
       [ Spec.Crowdfunding.tests
+      , Spec.Model.tests
       ]

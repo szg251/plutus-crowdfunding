@@ -46,7 +46,7 @@ cfParams =
     }
 
 rewardAssetClass :: AssetClass
-rewardAssetClass = AssetClass (rewardTokenCurSymbol cfParams, TokenName "reward token")
+rewardAssetClass = AssetClass (rewardTokenCurSymbol cfParams, rewardTokenName)
 
 adaAssetClass :: AssetClass
 adaAssetClass = AssetClass (Ada.adaSymbol, Ada.adaToken)
