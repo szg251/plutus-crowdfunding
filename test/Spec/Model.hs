@@ -24,7 +24,7 @@ module Spec.Model (
 import Control.Lens hiding (elements)
 import Control.Monad hiding (fmap)
 import Data.Default (Default (def))
-import Ledger (POSIXTime)
+import Ledger (POSIXTime (..))
 import qualified Ledger
 import Ledger.Ada as Ada
 import qualified Ledger.TimeSlot as TimeSlot
@@ -89,6 +89,7 @@ instance ContractModel CFModel where
             )
             mempty
         )
+    wait 3
   nextState (Support w1 w2 amt) = do
     when (amt > 0) $ do
       maybeCfParams <- getCFParams w2
@@ -107,26 +108,27 @@ instance ContractModel CFModel where
             mint rewardTokens
             deposit w1 rewardTokens
             (cfModel . ix w2 . cfmSupporters . at w1) $~ (\prev -> Just $ amt + fromMaybe 0 prev)
-    wait 2
+    wait 3
   nextState (Close w1 w2) = do
     s <- getModelState
     maybeCfParams <- getCFParams w2
     currentTime <- getCurrentTime
     case maybeCfParams of
       Nothing -> return ()
-      Just cfParams ->
+      Just cfParams -> do
         when (currentTime >= crowdfundingDeadline cfParams) $ do
           let supporters = s ^. contractState . cfModel . ix w2 . cfmSupporters
           let crowdfundingResult = sum $ Map.elems supporters
-          if crowdfundingTargetAmount cfParams >= crowdfundingResult
-            then when (w1 == w2) $ deposit w1 (Ada.lovelaceValueOf crowdfundingResult)
+          if crowdfundingResult >= crowdfundingTargetAmount cfParams
+            then when (w1 == w2) $ do
+              deposit w1 (Ada.lovelaceValueOf crowdfundingResult)
+              (cfModel . at w2) $= Nothing
             else do
-              let supporters = s ^. contractState . cfModel . ix w2 . cfmSupporters
               mapM_ (\(w, amt) -> deposit w (Ada.lovelaceValueOf amt)) $ Map.toPairs supporters
-              (cfModel . ix w2 . cfmSupporters . at w1) $= Nothing
-    wait 2
+              (cfModel . at w2) $= Nothing
+    wait 3
 
-  perform _ _ Start{} = return ()
+  perform _ _ Start{} = void $ Trace.waitNSlots 3
   perform h s (Support w1 w2 amount) = do
     case getCFParams' s w2 of
       Nothing -> return ()
@@ -134,13 +136,13 @@ instance ContractModel CFModel where
         Trace.callEndpoint @"support"
           (h $ CrowdfundingKey @ContractError w1)
           (SupportParams cfParams amount)
-        void $ Trace.waitNSlots 2
+        void $ Trace.waitNSlots 3
   perform h s (Close w1 w2) =
     case getCFParams' s w2 of
       Nothing -> return ()
       Just cfParams -> do
         Trace.callEndpoint @"close" (h $ CrowdfundingKey @ContractError w1) (CloseParams cfParams)
-        void $ Trace.waitNSlots 2
+        void $ Trace.waitNSlots 3
 
   precondition s (Start w _ _ _) = isNothing $ getCFParams' s w
   precondition s (Support _ w2 _) = isJust $ getCFParams' s w2
@@ -179,15 +181,32 @@ genAmount :: Gen Integer
 genAmount = (1000 *) . getPositive <$> arbitrary
 
 genDeadline :: Gen POSIXTime
-genDeadline = (\x -> fromInteger $ 1596059091000 + (10_000 * x)) <$> chooseInteger (0, 10)
+genDeadline = TimeSlot.slotToEndPOSIXTime def . Ledger.Slot <$> chooseInteger (0, 125)
 
 prop_CF :: Actions CFModel -> Property
 prop_CF =
   withMaxSuccess 100
-    . propRunActionsWithOptions
-      (defaultCheckOptions & maxSlot .~ 2000)
-      instanceSpec
-      (const $ pure True)
+    . propRunActionsWithOptions defaultCheckOptions instanceSpec (const $ pure True)
 
 test :: IO ()
-test = quickCheck prop_CF
+test = do
+  quickCheck (prop_CF actions)
+ where
+  actions =
+    Actions
+      [ Start (Wallet 2) (POSIXTime{getPOSIXTime = 1596059091999}) 7000 3100
+      , Start (Wallet 3) (POSIXTime{getPOSIXTime = 1596059196999}) 30000 1000
+      , Start (Wallet 1) (POSIXTime{getPOSIXTime = 1596059127999}) 14000 2800
+      , Support (Wallet 1) (Wallet 1) 16000
+      , Support (Wallet 3) (Wallet 1) 13000
+      , Close (Wallet 3) (Wallet 3)
+      , Close (Wallet 1) (Wallet 1)
+      , Close (Wallet 2) (Wallet 2)
+      , Support (Wallet 1) (Wallet 3) 19000
+      , Support (Wallet 2) (Wallet 3) 24000
+      , Support (Wallet 2) (Wallet 3) 24000
+      , Support (Wallet 3) (Wallet 1) 8000
+      , Support (Wallet 2) (Wallet 3) 4000
+      , Support (Wallet 1) (Wallet 1) 12000
+      , Support (Wallet 2) (Wallet 1) 27000
+      ]

@@ -103,6 +103,10 @@ instance Scripts.ValidatorTypes Crowdfunding where
   type RedeemerType Crowdfunding = CrowdfundingAction
   type DatumType Crowdfunding = SupportDatum
 
+eitherValidator :: Either BuiltinString a -> Bool
+eitherValidator (Left e) = traceIfFalse e False
+eitherValidator (Right _) = True
+
 {-# INLINEABLE mkRewardTokenPolicy #-}
 mkRewardTokenPolicy :: CrowdfundingParams -> Address -> () -> ScriptContext -> Bool
 mkRewardTokenPolicy cfParams@CrowdfundingParams{crowdfundingOwnerPkh, crowdfundingDeadline} scriptAddress () ctx =
@@ -265,7 +269,7 @@ collectFunds ::
   UtxoMap ->
   Contract () CrowdfundingSchema e ()
 collectFunds cfParams utxos = do
-  logInfo @Relude.String "Crowdfunding succesful, collecting funds"
+  logInfo @Relude.String "Crowdfunding successful, collecting funds"
   let lookups =
         Constraints.unspentOutputs utxos
           <> Constraints.otherScript (crowdfundingValidator cfParams)
@@ -285,7 +289,7 @@ returnFunds ::
   UtxoMap ->
   Contract () CrowdfundingSchema e ()
 returnFunds cfParams utxos = do
-  logInfo @Relude.String "Crowdfunding unsuccesful, returning funds"
+  logInfo @Relude.String "Crowdfunding unsuccessful, returning funds"
   let supporters = map findSupporter $ Map.elems utxos
 
   let lookups =
